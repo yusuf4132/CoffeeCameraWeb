@@ -51,48 +51,22 @@ function ThermalPrinterPage() {
     };
 
     const combineAndPrepareForPrint = async () => {
-        if (!frameRef.current || !videoRef.current) return;
-    
-        const video = videoRef.current;
-        const canvas = document.createElement("canvas");
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        const ctx = canvas.getContext("2d");
-    
-        // --- AYNALAMA İŞLEMİ BURADA YAPILIYOR ---
-        ctx.translate(canvas.width, 0);
-        ctx.scale(-1, 1);
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        // ---------------------------------------
-    
-        const dataUrl = canvas.toDataURL("image/png");
-    
-        // Geçici bir imaj oluşturup videonun üzerine koyuyoruz ki html2canvas onu görsün
-        const tempImg = document.createElement("img");
-        tempImg.src = dataUrl;
-        tempImg.style.position = "absolute";
-        tempImg.style.top = "0";
-        tempImg.style.left = "0";
-        tempImg.style.width = "100%";
-        tempImg.style.height = "100%";
-        tempImg.style.objectFit = "cover";
-        tempImg.style.zIndex = "10";
-        
-        const videoWrapper = frameRef.current.querySelector(".video-wrapper");
-        videoWrapper.appendChild(tempImg);
-    
-        // html2canvas ile yakala
-        const finalCanvas = await html2canvas(frameRef.current, {
+        if (!frameRef.current) return;
+        console.log(videoRef.current.videoWidth);
+        const canvas = await html2canvas(frameRef.current, {
             backgroundColor: "#ffffff",
             scale: 2,
             useCORS: true,
-            logging: false
+            onclone: (doc) => {
+                const video = doc.querySelector(".video-feed");
+                if (video) {
+                    video.style.transform = "scaleX(1)";
+                    // 🔥 html2canvas içindeki flip'i iptal ediyoruz
+                }
+            }
         });
-    
-        // Geçici resmi temizle
-        videoWrapper.removeChild(tempImg);
-    
-        const imageData = finalCanvas.toDataURL("image/png");
+
+        const imageData = canvas.toDataURL("image/png");
         setPreviewImage(imageData);
     };
     const handleConfirmPrint = () => {
