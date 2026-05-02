@@ -52,14 +52,16 @@ function ThermalPrinterPage() {
 
     const combineAndPrepareForPrint = async () => {
         if (!frameRef.current) return;
-    
+
         const canvas = await html2canvas(frameRef.current, {
             backgroundColor: "#ffffff",
             scale: 2 // 🔥 kaliteyi artırır
         });
-    
+
+        canvas.translate(canvas.width, 0);
+        canvas.scale(-1, 1);
         const imageData = canvas.toDataURL("image/png");
-    
+
         setPreviewImage(imageData);
     };
     const handleConfirmPrint = () => {
@@ -103,6 +105,9 @@ function ThermalPrinterPage() {
 
             {/* ALT */}
             <div className="bottom-section">
+                <button onClick={handleTakePhoto} className="take-photo-btn">
+                    Resim Çek
+                </button>
                 <div className="input-group">
                     <input
                         type="text"
@@ -116,10 +121,6 @@ function ThermalPrinterPage() {
                         {characterCount}/{maxChars}
                     </div>
                 </div>
-
-                <button onClick={handleTakePhoto} className="take-photo-btn">
-                    Resim Çek
-                </button>
             </div>
 
             <canvas ref={canvasRef} style={{ display: 'none' }}></canvas>

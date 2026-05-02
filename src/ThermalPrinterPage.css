@@ -50,7 +50,7 @@ body {
 .camera-frame {
   width: 100%;
   max-width: 100%;
-  height: 100%;
+  height: 85%;
   border: 2px solid black;
   /* inceltildi */
   position: relative;
@@ -167,7 +167,7 @@ body {
 /* Input */
 .input-group {
   width: 80%;
-  margin-bottom: 30px;
+  margin-bottom: 60px;
   position: relative;
 }
 
