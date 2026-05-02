@@ -63,13 +63,6 @@ function ThermalPrinterPage() {
             backgroundColor: "#ffffff",
             scale: 2,
             useCORS: true,
-            onclone: (doc) => {
-                const video = doc.querySelector(".video-feed");
-                if (video) {
-                    video.style.transform = "none";
-                    // 🔥 html2canvas içindeki flip'i iptal ediyoruz
-                }
-            }
         });
 
         const imageData = canvas.toDataURL("image/png");
