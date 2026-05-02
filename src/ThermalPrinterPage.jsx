@@ -52,7 +52,7 @@ function ThermalPrinterPage() {
 
     const combineAndPrepareForPrint = async () => {
         if (!frameRef.current) return;
-    
+
         const canvas = await html2canvas(frameRef.current, {
             backgroundColor: "#ffffff",
             scale: 2,
@@ -60,20 +60,20 @@ function ThermalPrinterPage() {
             onclone: (doc) => {
                 const video = doc.querySelector(".video-feed");
                 if (video) {
-                    video.style.transform = "scaleX(1)"; 
+                    video.style.transform = "scaleX(-1)";
                     // 🔥 html2canvas içindeki flip'i iptal ediyoruz
                 }
             }
         });
-    
+
         const imageData = canvas.toDataURL("image/png");
         setPreviewImage(imageData);
     };
     const handleConfirmPrint = () => {
         console.log("Yazıcıya gönderiliyor...");
-    
+
         // 👉 buraya printer kodu gelecek
-    
+
         setPreviewImage(null);
     };
 
