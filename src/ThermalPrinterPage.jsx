@@ -25,7 +25,13 @@ function ThermalPrinterPage() {
     useEffect(() => {
         async function startCamera() {
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: "user",
+                        // 🔥 kritik
+                        mirror: false
+                    }, audio: false
+                });
                 if (videoRef.current) {
                     videoRef.current.srcObject = stream;
                 }
@@ -51,10 +57,9 @@ function ThermalPrinterPage() {
     };
 
     const combineAndPrepareForPrint = async () => {
-        if (!frameRef.current || !videoRef.current) return;
-
-        // 1. UI (frame + text + logo)
-        const uiCanvas = await html2canvas(frameRef.current, {
+        if (!frameRef.current) return;
+        console.log(videoRef.current.videoWidth);
+        const canvas = await html2canvas(frameRef.current, {
             backgroundColor: "#ffffff",
             scale: 2,
             useCORS: true,
@@ -62,42 +67,13 @@ function ThermalPrinterPage() {
                 const video = doc.querySelector(".video-feed");
                 if (video) {
                     video.style.transform = "none";
+                    // 🔥 html2canvas içindeki flip'i iptal ediyoruz
                 }
             }
         });
 
-        // 2. video frame (GERÇEK görüntü)
-        const video = videoRef.current;
-
-        const videoCanvas = document.createElement("canvas");
-        const vctx = videoCanvas.getContext("2d");
-
-        videoCanvas.width = video.videoWidth;
-        videoCanvas.height = video.videoHeight;
-
-        // mirror düzeltme (preview'a göre)
-        vctx.translate(videoCanvas.width, 0);
-        vctx.scale(-1, 1);
-
-        vctx.drawImage(video, 0, 0);
-
-        const videoImg = new Image();
-        videoImg.src = videoCanvas.toDataURL("image/png");
-
-        await new Promise(res => (videoImg.onload = res));
-
-        // 3. final merge
-        const finalCanvas = document.createElement("canvas");
-        const ctx = finalCanvas.getContext("2d");
-
-        finalCanvas.width = uiCanvas.width;
-        finalCanvas.height = uiCanvas.height;
-
-        ctx.drawImage(uiCanvas, 0, 0);
-
-        ctx.drawImage(videoImg, 0, 0);
-
-        setPreviewImage(finalCanvas.toDataURL("image/png"));
+        const imageData = canvas.toDataURL("image/png");
+        setPreviewImage(imageData);
     };
     const handleConfirmPrint = () => {
         console.log("Yazıcıya gönderiliyor...");
