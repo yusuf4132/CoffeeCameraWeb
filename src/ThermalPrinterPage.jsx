@@ -51,33 +51,64 @@ function ThermalPrinterPage() {
     };
 
     const combineAndPrepareForPrint = async () => {
-        if (!frameRef.current) return;
-
-        const canvas = await html2canvas(frameRef.current, {
-            backgroundColor: "#ffffff",
-            scale: 2
-        });
-
-        const flippedCanvas = document.createElement("canvas");
-        const ctx = flippedCanvas.getContext("2d");
-
-        flippedCanvas.width = canvas.width;
-        flippedCanvas.height = canvas.height;
-
-        // 🔥 aynayı düzelt
-        ctx.translate(canvas.width, 0);
+        const video = videoRef.current;
+        if (!video) return;
+    
+        // 👇 ekranda görünen ölçüyü al (çok önemli!)
+        const width = video.offsetWidth;
+        const height = video.offsetHeight;
+    
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+    
+        canvas.width = width;
+        canvas.height = height;
+    
+        // 🔥 SADECE kamerayı ters çevir
+        ctx.translate(width, 0);
         ctx.scale(-1, 1);
-        ctx.drawImage(canvas, 0, 0);
-
-        const imageData = flippedCanvas.toDataURL("image/png");
-        setPreviewImage(imageData);
+        ctx.drawImage(video, 0, 0, width, height);
+    
+        // 🔥 normale dön (yazı/logo ters olmasın)
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+    
+        // ✍️ ÜST YAZI
+        ctx.fillStyle = "#222";
+        ctx.font = "20px Poppins";
+        ctx.textAlign = "center";
+        ctx.fillText(inputText, width / 2, 30);
+    
+        // 🔻 LOGOLAR (async yüklenir)
+        const logoLeft = new Image();
+        const logoRight = new Image();
+        const logoText = new Image();
+    
+        logoLeft.src = logoPng;
+        logoRight.src = logoPng;
+        logoText.src = coffeeRotaTextPng;
+    
+        Promise.all([
+            new Promise(res => logoLeft.onload = res),
+            new Promise(res => logoRight.onload = res),
+            new Promise(res => logoText.onload = res),
+        ]).then(() => {
+    
+            const y = height - 40;
+    
+            ctx.drawImage(logoLeft, 10, y, 30, 30);
+            ctx.drawImage(logoText, width / 2 - 40, y + 5, 80, 20);
+            ctx.drawImage(logoRight, width - 40, y, 30, 30);
+    
+            const imageData = canvas.toDataURL("image/png");
+            setPreviewImage(imageData);
+        });
     };
     const handleConfirmPrint = () => {
         console.log("Yazıcıya gönderiliyor...");
-
-        // 🔥 BURAYA yazıcı kodun gelecek
-
-        setPreviewImage(null); // modal kapat
+    
+        // 👉 buraya printer kodu gelecek
+    
+        setPreviewImage(null);
     };
 
     return (
