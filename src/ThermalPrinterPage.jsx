@@ -55,13 +55,21 @@ function ThermalPrinterPage() {
 
         const canvas = await html2canvas(frameRef.current, {
             backgroundColor: "#ffffff",
-            scale: 2 // 🔥 kaliteyi artırır
+            scale: 2
         });
 
-        canvas.translate(canvas.width, 0);
-        canvas.scale(-1, 1);
-        const imageData = canvas.toDataURL("image/png");
+        const flippedCanvas = document.createElement("canvas");
+        const ctx = flippedCanvas.getContext("2d");
 
+        flippedCanvas.width = canvas.width;
+        flippedCanvas.height = canvas.height;
+
+        // 🔥 aynayı düzelt
+        ctx.translate(canvas.width, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(canvas, 0, 0);
+
+        const imageData = flippedCanvas.toDataURL("image/png");
         setPreviewImage(imageData);
     };
     const handleConfirmPrint = () => {
