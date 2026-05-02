@@ -60,7 +60,7 @@ function ThermalPrinterPage() {
             onclone: (doc) => {
                 const video = doc.querySelector(".video-feed");
                 if (video) {
-                    video.style.transform = "scaleX(1)";
+                    //video.style.transform = "scaleX(-1)";
                     // 🔥 html2canvas içindeki flip'i iptal ediyoruz
                 }
             }
