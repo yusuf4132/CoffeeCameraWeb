@@ -52,32 +52,47 @@ function ThermalPrinterPage() {
 
     const combineAndPrepareForPrint = async () => {
         if (!frameRef.current || !videoRef.current) return;
-
+    
         const video = videoRef.current;
-
         const canvas = document.createElement("canvas");
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
         const ctx = canvas.getContext("2d");
-
-        const width = video.videoWidth;
-        const height = video.videoHeight;
-
-        canvas.width = width;
-        canvas.height = height;
-
-        // 🎥 SADECE KAMERA (flip burada yapılır)
-        ctx.translate(width, 0);
+    
+        // --- AYNALAMA İŞLEMİ BURADA YAPILIYOR ---
+        ctx.translate(canvas.width, 0);
         ctx.scale(-1, 1);
-        ctx.drawImage(video, 0, 0, width, height);
-
-        // 🧠 DOM overlay (yazı + logo) html2canvas ile alınır
-        const overlay = await html2canvas(frameRef.current, {
-            backgroundColor: null,
-            scale: 2
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        // ---------------------------------------
+    
+        const dataUrl = canvas.toDataURL("image/png");
+    
+        // Geçici bir imaj oluşturup videonun üzerine koyuyoruz ki html2canvas onu görsün
+        const tempImg = document.createElement("img");
+        tempImg.src = dataUrl;
+        tempImg.style.position = "absolute";
+        tempImg.style.top = "0";
+        tempImg.style.left = "0";
+        tempImg.style.width = "100%";
+        tempImg.style.height = "100%";
+        tempImg.style.objectFit = "cover";
+        tempImg.style.zIndex = "10";
+        
+        const videoWrapper = frameRef.current.querySelector(".video-wrapper");
+        videoWrapper.appendChild(tempImg);
+    
+        // html2canvas ile yakala
+        const finalCanvas = await html2canvas(frameRef.current, {
+            backgroundColor: "#ffffff",
+            scale: 2,
+            useCORS: true,
+            logging: false
         });
-
-        ctx.drawImage(overlay, 0, 0, width, height);
-
-        const imageData = canvas.toDataURL("image/png");
+    
+        // Geçici resmi temizle
+        videoWrapper.removeChild(tempImg);
+    
+        const imageData = finalCanvas.toDataURL("image/png");
         setPreviewImage(imageData);
     };
     const handleConfirmPrint = () => {
