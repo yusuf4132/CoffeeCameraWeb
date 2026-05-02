@@ -51,20 +51,31 @@ function ThermalPrinterPage() {
     };
 
     const combineAndPrepareForPrint = async () => {
-        if (!frameRef.current) return;
+        if (!frameRef.current || !videoRef.current) return;
 
-        const canvas = await html2canvas(frameRef.current, {
-            backgroundColor: "#ffffff",
-            scale: 2,
-            useCORS: true,
-            onclone: (doc) => {
-                const video = doc.querySelector(".video-feed");
-                if (video) {
-                    video.style.transform = "scaleX(-1)";
-                    // 🔥 html2canvas içindeki flip'i iptal ediyoruz
-                }
-            }
+        const video = videoRef.current;
+
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+
+        const width = video.videoWidth;
+        const height = video.videoHeight;
+
+        canvas.width = width;
+        canvas.height = height;
+
+        // 🎥 SADECE KAMERA (flip burada yapılır)
+        ctx.translate(width, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(video, 0, 0, width, height);
+
+        // 🧠 DOM overlay (yazı + logo) html2canvas ile alınır
+        const overlay = await html2canvas(frameRef.current, {
+            backgroundColor: null,
+            scale: 2
         });
+
+        ctx.drawImage(overlay, 0, 0, width, height);
 
         const imageData = canvas.toDataURL("image/png");
         setPreviewImage(imageData);
