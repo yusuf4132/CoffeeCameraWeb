@@ -5,6 +5,7 @@ body {
   justify-content: center;
   align-items: center;
   min-height: 100vh;
+  min-width: 100vw;
   background-color: white;
 }
 
@@ -12,10 +13,9 @@ body {
   display: flex;
   flex-direction: column;
   /* 🔥 artık dikey */
-  height: 100dvh;
-  width: 100vw;
+  height: 100vh;
   max-width: 500px;
-  margin: 0 auto;
+  margin: 0 0;
   background-color: white;
 }
 
@@ -273,7 +273,8 @@ body {
   justify-content: center;
   align-items: center;
   background: #466153;
-  padding: 16px;
+  padding: 0px;
+  width: 100vw;
 }
 
 .verify-box {
