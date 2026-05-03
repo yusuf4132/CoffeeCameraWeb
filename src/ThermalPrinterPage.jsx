@@ -55,22 +55,59 @@ function ThermalPrinterPage() {
     };
 
     const combineAndPrepareForPrint = async () => {
-        if (!frameRef.current) return;
+        if (!frameRef.current || !videoRef.current) return;
+
+        const video = videoRef.current;
+        const frame = frameRef.current;
 
         try {
-            // html-to-image kullanımı
-            // toPng, toJpeg veya toBlob kullanabilirsin. Termal yazıcılar için genelde PNG iyidir.
-            const dataUrl = await htmlToImage.toPng(frameRef.current, {
-                quality: 1.0,
-                pixelRatio: 2, // Çözünürlüğü artırmak için (html2canvas scale gibi)
+            // 1. Video karesini dondur
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = video.videoWidth;
+            tempCanvas.height = video.videoHeight;
+            tempCanvas.getContext('2d').drawImage(video, 0, 0);
+            const videoSnapshot = tempCanvas.toDataURL('image/png');
+
+            // 2. Geçici resmi video üzerine yerleştir
+            const tempImg = document.createElement('img');
+            tempImg.src = videoSnapshot;
+            tempImg.style.position = 'absolute';
+            tempImg.style.top = '0';
+            tempImg.style.left = '0';
+            tempImg.style.width = '100%';
+            tempImg.style.height = '100%';
+            tempImg.style.objectFit = 'cover';
+            tempImg.style.zIndex = '10';
+
+            const videoWrapper = frame.querySelector('.video-wrapper');
+            videoWrapper.appendChild(tempImg);
+
+            await new Promise(r => setTimeout(r, 100));
+
+            // 3. Çerçevenin tamamını (Frame) resme dönüştür
+            const dataUrl = await htmlToImage.toPng(frame, {
                 backgroundColor: '#ffffff',
-                cacheBust: true, // Resimlerin önbellekten hatalı gelmesini önler
+                pixelRatio: 3,
+                filter: (node) => node.tagName !== 'VIDEO'
             });
 
+            // 4. TEMİZLİK
+            videoWrapper.removeChild(tempImg);
+
+            // 5. ÖNİZLEMEYE SET ET
             setPreviewImage(dataUrl);
-            console.log("Resim başarıyla oluşturuldu.");
+
+            // --- 6. TELEFONA İNDİRME KISMI (YENİ) ---
+            const downloadLink = document.createElement('a');
+            downloadLink.href = dataUrl;
+            downloadLink.download = `CoffeeRota_${Date.now()}.png`; // Dosya adı
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+            // ----------------------------------------
+
         } catch (error) {
-            console.error('Resim oluşturulurken hata oluştu:', error);
+            console.error("Hata oluştu:", error);
         }
     };
     const handleConfirmPrint = () => {
