@@ -58,10 +58,19 @@ function ThermalPrinterPage() {
     const combineAndPrepareForPrint = async () => {
         if (!frameRef.current) return;
         console.log(videoRef.current.videoWidth);
+        const videoEl = videoRef.current;
+
+        // aynayı kaldır
+        videoEl.style.transform = "scaleX(1)";
+
         const canvas = await html2canvas(frameRef.current, {
             backgroundColor: "#ffffff",
             scale: 2,
+            useCORS: true,
         });
+
+        // tekrar aynala (UI bozulmasın)
+        videoEl.style.transform = "scaleX(-1)";
 
         const imageData = canvas.toDataURL("image/png");
         setPreviewImage(imageData);
