@@ -12,7 +12,6 @@ function ThermalPrinterPage() {
     const [inputText, setInputText] = useState('');
     const [characterCount, setCharacterCount] = useState(0);
     const videoRef = useRef(null);
-    const canvasRef = useRef(null); // Resmi birleştirmek için kullanılacak
     const maxChars = 35;
     const [previewImage, setPreviewImage] = useState(null);
     useEffect(() => {
@@ -62,7 +61,6 @@ function ThermalPrinterPage() {
         const canvas = await html2canvas(frameRef.current, {
             backgroundColor: "#ffffff",
             scale: 2,
-            useCORS: true,
         });
 
         const imageData = canvas.toDataURL("image/png");
@@ -126,8 +124,6 @@ function ThermalPrinterPage() {
                     </div>
                 </div>
             </div>
-
-            <canvas ref={canvasRef} style={{ display: 'none' }}></canvas>
 
             {previewImage && (
                 <div className="preview-overlay">
