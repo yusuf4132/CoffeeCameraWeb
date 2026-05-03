@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './ThermalPrinterPage.css'; // Aşağıdaki CSS dosyasını oluşturun
 import html2canvas from "html2canvas";
+import * as htmlToImage from 'html-to-image';
 
 // Yer tutucu resim yolları (Kendi dosya yollarınızla değiştirin)
 // Örnek: import logo from './assets/logo.png';
@@ -27,8 +28,6 @@ function ThermalPrinterPage() {
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: {
                         facingMode: "user",
-                        // 🔥 kritik
-                        mirror: false
                     }, audio: false
                 });
                 if (videoRef.current) {
@@ -57,20 +56,22 @@ function ThermalPrinterPage() {
 
     const combineAndPrepareForPrint = async () => {
         if (!frameRef.current) return;
-        console.log(videoRef.current.videoWidth);
-        const videoEl = videoRef.current;
 
-        // aynayı kaldır
-        videoEl.style.transform = "scaleX(-1)";
+        try {
+            // html-to-image kullanımı
+            // toPng, toJpeg veya toBlob kullanabilirsin. Termal yazıcılar için genelde PNG iyidir.
+            const dataUrl = await htmlToImage.toPng(frameRef.current, {
+                quality: 1.0,
+                pixelRatio: 2, // Çözünürlüğü artırmak için (html2canvas scale gibi)
+                backgroundColor: '#ffffff',
+                cacheBust: true, // Resimlerin önbellekten hatalı gelmesini önler
+            });
 
-        const canvas = await html2canvas(frameRef.current, {
-            backgroundColor: "#ffffff",
-            scale: 2,
-            useCORS: true,
-        });
-
-        const imageData = canvas.toDataURL("image/png");
-        setPreviewImage(imageData);
+            setPreviewImage(dataUrl);
+            console.log("Resim başarıyla oluşturuldu.");
+        } catch (error) {
+            console.error('Resim oluşturulurken hata oluştu:', error);
+        }
     };
     const handleConfirmPrint = () => {
         console.log("Yazıcıya gönderiliyor...");
