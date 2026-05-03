@@ -69,9 +69,6 @@ function ThermalPrinterPage() {
             useCORS: true,
         });
 
-        // tekrar aynala (UI bozulmasın)
-        videoEl.style.transform = "scaleX(1)";
-
         const imageData = canvas.toDataURL("image/png");
         setPreviewImage(imageData);
     };
