@@ -12,7 +12,7 @@ body {
   display: flex;
   flex-direction: column;
   /* 🔥 artık dikey */
-  height: 100vh;
+  height: 100dvh;
   width: 100vw;
   max-width: 500px;
   margin: 0 auto;

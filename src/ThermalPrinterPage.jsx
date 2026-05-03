@@ -24,25 +24,27 @@ function ThermalPrinterPage() {
         }
     }, []);
 
-    // Kamera akışını başlat
     useEffect(() => {
-        async function startCamera() {
+        if (!isVerified) return;
+
+        const startCamera = async () => {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({
-                    video: {
-                        facingMode: "user",
-                    }, audio: false
+                    video: { facingMode: "user" },
+                    audio: false
                 });
+
                 if (videoRef.current) {
                     videoRef.current.srcObject = stream;
                 }
             } catch (err) {
                 console.error("Kameraya erişilemedi:", err);
-                // Hata durumunda kullanıcıya bilgi verilebilir
             }
-        }
+        };
+
         startCamera();
-    }, []);
+
+    }, [isVerified]);
 
     useEffect(() => {
         if (!expireTime) return;
