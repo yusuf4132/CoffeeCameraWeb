@@ -61,7 +61,7 @@ function ThermalPrinterPage() {
         const videoEl = videoRef.current;
 
         // aynayı kaldır
-        videoEl.style.transform = "scaleX(1)";
+        videoEl.style.transform = "scaleX(-1)";
 
         const canvas = await html2canvas(frameRef.current, {
             backgroundColor: "#ffffff",
