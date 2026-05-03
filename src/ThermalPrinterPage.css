@@ -67,6 +67,7 @@ body {
   overflow: hidden;
   position: relative;
   border: 1px solid #ddd;
+  transform: scaleX(-1);
   /* inceltildi */
 }
 

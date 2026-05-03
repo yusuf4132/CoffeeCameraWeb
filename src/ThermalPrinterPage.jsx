@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './ThermalPrinterPage.css'; // Aşağıdaki CSS dosyasını oluşturun
 import html2canvas from "html2canvas";
-import * as htmlToImage from 'html-to-image';
 
 // Yer tutucu resim yolları (Kendi dosya yollarınızla değiştirin)
 // Örnek: import logo from './assets/logo.png';
