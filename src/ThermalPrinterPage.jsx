@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './ThermalPrinterPage.css'; // Aşağıdaki CSS dosyasını oluşturun
 import html2canvas from "html2canvas";
+import { supabase } from "./supabaseClient";
 
 // Yer tutucu resim yolları (Kendi dosya yollarınızla değiştirin)
 // Örnek: import logo from './assets/logo.png';
@@ -8,6 +9,9 @@ const logoPng = 'isma_logo.png'; // Sadece 'R' logosu
 const coffeeRotaTextPng = 'isma_yazi.png'; // 'COFFEE ROTA' metni logosu
 
 function ThermalPrinterPage() {
+    const [isVerified, setIsVerified] = useState(false);
+    const [code, setCode] = useState("");
+    const [expireTime, setExpireTime] = useState(null);
     const frameRef = useRef(null)
     const [inputText, setInputText] = useState('');
     const [characterCount, setCharacterCount] = useState(0);
@@ -40,6 +44,51 @@ function ThermalPrinterPage() {
         startCamera();
     }, []);
 
+    useEffect(() => {
+        if (!expireTime) return;
+
+        const interval = setInterval(() => {
+            if (new Date().toISOString > expireTime) {
+                alert("Süren doldu");
+                setIsVerified(false);
+                setCode("");
+            }
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, [expireTime]);
+
+    const verifyCode = async () => {
+        const { data } = await supabase
+            .from("codes")
+            .select("*")
+            .eq("code", code)
+            .single();
+
+        if (!data) {
+            alert("Kod yanlış");
+            return;
+        }
+
+        if (data.used) {
+            alert("Kod kullanılmış");
+            return;
+        }
+
+        if (new Date(data.expires_at) < new Date().toISOString()) {
+            alert("Süre dolmuş");
+            return;
+        }
+
+        await supabase
+            .from("codes")
+            .update({ used: true })
+            .eq("id", data.id);
+
+        setExpireTime(new Date(data.expires_at));
+        setIsVerified(true);
+    };
+
     const handleInputChange = (event) => {
         const text = event.target.value;
         if (text.length <= maxChars) {
@@ -71,7 +120,24 @@ function ThermalPrinterPage() {
         // 👉 buraya printer kodu gelecek
 
         setPreviewImage(null);
+        setInputText("");
     };
+
+    if (!isVerified) {
+        return (
+            <div className="verify-container">
+                <div className="verify-box">
+                    <h2>Kod Gir</h2>
+                    <input
+                        value={code}
+                        onChange={(e) => setCode(e.target.value)}
+                        placeholder="Kodunuzu girin"
+                    />
+                    <button onClick={verifyCode}>Giriş</button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="container">
@@ -83,6 +149,19 @@ function ThermalPrinterPage() {
                     <img src={coffeeRotaTextPng} alt="Coffee Rota Text" className="main-logo-text" />
                 </div>
                 <h1 className="welcome-text">Hoşgeldiniz</h1>
+                <div className="input-group">
+                    <input
+                        type="text"
+                        placeholder="Emoji veya İsmini Ekle..."
+                        value={inputText}
+                        onChange={handleInputChange}
+                        maxLength={maxChars}
+                        className="name-input"
+                    />
+                    <div className="char-counter">
+                        {characterCount}/{maxChars}
+                    </div>
+                </div>
             </div>
 
             {/* ORTA (KAMERA) */}
@@ -109,19 +188,6 @@ function ThermalPrinterPage() {
                 <button onClick={handleTakePhoto} className="take-photo-btn">
                     Resim Çek
                 </button>
-                <div className="input-group">
-                    <input
-                        type="text"
-                        placeholder="Emoji ve İsminizi Ekle..."
-                        value={inputText}
-                        onChange={handleInputChange}
-                        maxLength={maxChars}
-                        className="name-input"
-                    />
-                    <div className="char-counter">
-                        {characterCount}/{maxChars}
-                    </div>
-                </div>
             </div>
 
             {previewImage && (
