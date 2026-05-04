@@ -48,14 +48,23 @@ function ThermalPrinterPage() {
     useEffect(() => {
         const checkNetwork = async () => {
             try {
+                alert("İstek atılıyor...");
+
                 const res = await fetch("http://192.168.1.106:3001/ping");
 
+                alert("Response geldi: " + res.status);
+
                 if (res.ok) {
+                    alert("BAŞARILI ✅");
                     setIsVerified(true);
                 } else {
+                    alert("Sunucu cevap verdi ama OK değil ❌");
                     setIsVerified(false);
                 }
+
             } catch (err) {
+                alert("HATA ❌: " + err.message);
+                console.error(err);
                 setIsVerified(false);
             }
         };
