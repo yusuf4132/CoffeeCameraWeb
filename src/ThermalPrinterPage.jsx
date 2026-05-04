@@ -72,48 +72,32 @@ function ThermalPrinterPage() {
     }, []);
 
     useEffect(() => {
-        const checkLocation = () => {
-            if (!navigator.geolocation) {
-                alert("Tarayıcınız konum özelliğini desteklemiyor.");
-                return;
-            }
-
-            const options = {
-                enableHighAccuracy: true, // Daha kesin sonuç için GPS kullanır
-                timeout: 10000,           // 10 saniye içinde yanıt gelmezse hata döndürür
-                maximumAge: 0             // Önbellekteki eski konumu kullanma
-            };
-
+        // Sayfa yüklenince hemen değil, 1 saniye sonra konumu iste
+        const timer = setTimeout(() => {
             navigator.geolocation.getCurrentPosition(
                 (position) => {
-                    const distance = getDistanceInMeters(
-                        position.coords.latitude,
-                        position.coords.longitude,
-                        TARGET_LOCATION.lat,
-                        TARGET_LOCATION.lng
-                    );
+                    const userLat = position.coords.latitude;
+                    const userLng = position.coords.longitude;
+                    const distance = getDistanceInMeters(userLat, userLng, TARGET_LOCATION.lat, TARGET_LOCATION.lng);
 
                     if (distance <= MAX_DISTANCE) {
                         setIsLocationAllowed(true);
                         setIsVerified(true);
                     } else {
-                        alert("Mekana yeterince yakın değilsiniz.");
+                        alert("Mekana çok uzaktasın.");
                     }
                 },
                 (error) => {
-                    console.error("Konum hatası:", error);
-                    // Hata koduna göre kullanıcıyı bilgilendir
-                    if (error.code === 1) {
-                        alert("Konum izni reddedildi. Lütfen tarayıcı ayarlarından konuma izin verin.");
-                    }
+                    console.error("Konum hatası detayı:", error);
+                    // Burası "Reddedildi" (Code 1) diyorsa tarayıcı isteği bloklamıştır.
+                    setIsLocationAllowed(false);
                 },
-                options
+                { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
             );
-        };
+        }, 1000); // 1000 ms = 1 saniye bekle
 
-        checkLocation();
+        return () => clearTimeout(timer);
     }, []);
-
     /*useEffect(() => {
         if (!expireTime) return;
 
