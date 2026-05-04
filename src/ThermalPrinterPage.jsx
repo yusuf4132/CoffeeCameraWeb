@@ -70,6 +70,43 @@ function ThermalPrinterPage() {
 
         startCamera();
     }, []);
+    const requestPermissions = async () => {
+        try {
+            // 1. KONUM
+            const position = await new Promise((resolve, reject) => {
+                navigator.geolocation.getCurrentPosition(resolve, reject);
+            });
+
+            const userLat = position.coords.latitude;
+            const userLng = position.coords.longitude;
+
+            const distance = getDistanceInMeters(
+                userLat,
+                userLng,
+                TARGET_LOCATION.lat,
+                TARGET_LOCATION.lng
+            );
+
+            if (distance > MAX_DISTANCE) {
+                alert("Mekana çok uzaktasın.");
+                return;
+            }
+
+            setIsLocationAllowed(true);
+
+            // 2. KAMERA
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: true
+            });
+
+            if (videoRef.current) {
+                videoRef.current.srcObject = stream;
+            }
+
+        } catch (err) {
+            console.error("İzin hatası:", err);
+        }
+    };
 
     useEffect(() => {
         // Sayfa yüklenince hemen değil, 1 saniye sonra konumu iste
@@ -208,7 +245,9 @@ function ThermalPrinterPage() {
 
                     <h2>Konum Doğrulanıyor</h2>
                     <p>Lütfen bekleyin, bulunduğunuz yer kontrol ediliyor...</p>
-
+                    <button onClick={requestPermissions}>
+                        Başla
+                    </button>
                 </div>
             </div>
         );
