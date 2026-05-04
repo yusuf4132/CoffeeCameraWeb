@@ -236,7 +236,7 @@ function ThermalPrinterPage() {
         );
     }*/
 
-    if (!isLocationAllowed) {
+    /*if (!isLocationAllowed) {
         return (
             <div className="location-check-container">
                 <div className="location-card">
@@ -251,7 +251,7 @@ function ThermalPrinterPage() {
                 </div>
             </div>
         );
-    }
+    }*/
     return (
         <div className="container">
 
