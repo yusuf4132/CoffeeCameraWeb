@@ -72,33 +72,46 @@ function ThermalPrinterPage() {
     }, []);
 
     useEffect(() => {
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                const userLat = position.coords.latitude;
-                const userLng = position.coords.longitude;
-
-                const distance = getDistanceInMeters(
-                    userLat,
-                    userLng,
-                    TARGET_LOCATION.lat,
-                    TARGET_LOCATION.lng
-                );
-
-                console.log("Mesafe:", distance);
-
-                if (distance <= MAX_DISTANCE) {
-                    setIsLocationAllowed(true);
-                    setIsVerified(true); // giriş izni
-                } else {
-                    alert("Bu hizmeti kullanmak için mekana daha yakın olmalısın.");
-                    setIsLocationAllowed(false);
-                }
-            },
-            (error) => {
-                console.error("Konum alınamadı:", error);
-                alert("Konum izni vermen gerekiyor.");
+        const checkLocation = () => {
+            if (!navigator.geolocation) {
+                alert("Tarayıcınız konum özelliğini desteklemiyor.");
+                return;
             }
-        );
+
+            const options = {
+                enableHighAccuracy: true, // Daha kesin sonuç için GPS kullanır
+                timeout: 10000,           // 10 saniye içinde yanıt gelmezse hata döndürür
+                maximumAge: 0             // Önbellekteki eski konumu kullanma
+            };
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const distance = getDistanceInMeters(
+                        position.coords.latitude,
+                        position.coords.longitude,
+                        TARGET_LOCATION.lat,
+                        TARGET_LOCATION.lng
+                    );
+
+                    if (distance <= MAX_DISTANCE) {
+                        setIsLocationAllowed(true);
+                        setIsVerified(true);
+                    } else {
+                        alert("Mekana yeterince yakın değilsiniz.");
+                    }
+                },
+                (error) => {
+                    console.error("Konum hatası:", error);
+                    // Hata koduna göre kullanıcıyı bilgilendir
+                    if (error.code === 1) {
+                        alert("Konum izni reddedildi. Lütfen tarayıcı ayarlarından konuma izin verin.");
+                    }
+                },
+                options
+            );
+        };
+
+        checkLocation();
     }, []);
 
     /*useEffect(() => {
