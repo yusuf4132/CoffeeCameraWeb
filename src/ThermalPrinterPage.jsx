@@ -55,8 +55,16 @@ function ThermalPrinterPage() {
                 } else {
                     setIsVerified(false);
                 }
-            } catch {
-                setIsVerified(false);
+            } catch (err) {
+                fetch("http://192.168.1.106:3001/log", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        message: err.message,
+                        name: err.name,
+                        stack: err.stack
+                    })
+                });
             }
         };
 
