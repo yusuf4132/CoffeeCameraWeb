@@ -10,14 +10,40 @@ const coffeeRotaTextPng = 'isma_yazi.png'; // 'COFFEE ROTA' metni logosu
 
 function ThermalPrinterPage() {
     const [isVerified, setIsVerified] = useState(false);
+    const TARGET_LOCATION = {
+        lat: 40.691111,  // buraya kendi koordinatın
+        lng: 29.607271,
+    };
+    const MAX_DISTANCE = 200; // metre
     //const [code, setCode] = useState("");
     //const [expireTime, setExpireTime] = useState(null);
     const frameRef = useRef(null)
     const [inputText, setInputText] = useState('');
     const [characterCount, setCharacterCount] = useState(0);
+    const [isLocationAllowed, setIsLocationAllowed] = useState(false);
     const videoRef = useRef(null);
     const maxChars = 35;
     const [previewImage, setPreviewImage] = useState(null);
+
+    const getDistanceInMeters = (lat1, lon1, lat2, lon2) => {
+        const R = 6371e3; // dünya yarıçapı (metre)
+        const toRad = (deg) => deg * Math.PI / 180;
+
+        const φ1 = toRad(lat1);
+        const φ2 = toRad(lat2);
+        const Δφ = toRad(lat2 - lat1);
+        const Δλ = toRad(lon2 - lon1);
+
+        const a =
+            Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+            Math.cos(φ1) * Math.cos(φ2) *
+            Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+        return R * c;
+    };
+
     useEffect(() => {
         if (videoRef.current) {
             videoRef.current.setAttribute("crossorigin", "anonymous");
@@ -25,7 +51,7 @@ function ThermalPrinterPage() {
     }, []);
 
     useEffect(() => {
-        if (!isVerified) return;
+        //if (!isVerified) return;
 
         const startCamera = async () => {
             try {
@@ -43,32 +69,36 @@ function ThermalPrinterPage() {
         };
 
         startCamera();
-    }, [isVerified]);
+    }, []);
 
     useEffect(() => {
-        const checkNetwork = async () => {
-            try {
-                const res = await fetch("http://192.168.1.106:3001/ping");
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const userLat = position.coords.latitude;
+                const userLng = position.coords.longitude;
 
-                if (res.ok) {
-                    setIsVerified(true);
+                const distance = getDistanceInMeters(
+                    userLat,
+                    userLng,
+                    TARGET_LOCATION.lat,
+                    TARGET_LOCATION.lng
+                );
+
+                console.log("Mesafe:", distance);
+
+                if (distance <= MAX_DISTANCE) {
+                    setIsLocationAllowed(true);
+                    setIsVerified(true); // giriş izni
                 } else {
-                    setIsVerified(false);
+                    alert("Bu hizmeti kullanmak için mekana daha yakın olmalısın.");
+                    setIsLocationAllowed(false);
                 }
-            } catch (err) {
-                fetch("http://192.168.1.106:3001/log", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        message: err.message,
-                        name: err.name,
-                        stack: err.stack
-                    })
-                });
+            },
+            (error) => {
+                console.error("Konum alınamadı:", error);
+                alert("Konum izni vermen gerekiyor.");
             }
-        };
-
-        checkNetwork();
+        );
     }, []);
 
     /*useEffect(() => {
@@ -142,10 +172,16 @@ function ThermalPrinterPage() {
         setPreviewImage(imageData);
     };
     const handleConfirmPrint = () => {
-        console.log("Yazıcıya gönderiliyor...");
+        if (!previewImage) return;
 
-        // 👉 buraya printer kodu gelecek
+        const link = document.createElement("a");
+        link.href = previewImage;
+        link.download = `photo_${Date.now()}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
 
+        // temizleme
         setPreviewImage(null);
         setInputText("");
     };
@@ -166,11 +202,17 @@ function ThermalPrinterPage() {
         );
     }*/
 
-    if (!isVerified) {
+    if (!isLocationAllowed) {
         return (
-            <div style={{ textAlign: "center", marginTop: "50px" }}>
-                <h2>Bu ağa bağlı değilsiniz ❌</h2>
-                <p>Lütfen doğru Wi-Fi ağına bağlanın</p>
+            <div className="location-check-container">
+                <div className="location-card">
+
+                    <div className="spinner"></div>
+
+                    <h2>Konum Doğrulanıyor</h2>
+                    <p>Lütfen bekleyin, bulunduğunuz yer kontrol ediliyor...</p>
+
+                </div>
             </div>
         );
     }
@@ -202,18 +244,20 @@ function ThermalPrinterPage() {
             {/* ORTA (KAMERA) */}
             <div className="middle-section">
                 <div className="camera-frame" ref={frameRef}>
-                    <div className="user-text-overlay">
-                        {inputText}
-                    </div>
+                    <div className="camera-inner">
+                        <div className="user-text-overlay">
+                            {inputText}
+                        </div>
 
-                    <div className="video-wrapper">
-                        <video ref={videoRef} autoPlay playsInline muted className="video-feed" />
-                    </div>
+                        <div className="video-wrapper">
+                            <video ref={videoRef} autoPlay playsInline muted className="video-feed" />
+                        </div>
 
-                    <div className="frame-bottom-logos">
-                        <img src={logoPng} alt="Logo" className="frame-logo-r" />
-                        <img src={coffeeRotaTextPng} alt="Coffee Rota Text" className="frame-logo-text" />
-                        <img src={logoPng} alt="Logo" className="frame-logo-r" />
+                        <div className="frame-bottom-logos">
+                            <img src={logoPng} alt="Logo" className="frame-logo-r" />
+                            <img src={coffeeRotaTextPng} alt="Coffee Rota Text" className="frame-logo-text" />
+                            <img src={logoPng} alt="Logo" className="frame-logo-r" />
+                        </div>
                     </div>
                 </div>
             </div>
