@@ -51,7 +51,7 @@ function ThermalPrinterPage() {
     }, []);
 
     useEffect(() => {
-        //if (!isVerified) return;
+        if (!isLocationAllowed) return;
 
         const startCamera = async () => {
             try {
@@ -69,44 +69,7 @@ function ThermalPrinterPage() {
         };
 
         startCamera();
-    }, []);
-    const requestPermissions = async () => {
-        try {
-            // 1. KONUM
-            const position = await new Promise((resolve, reject) => {
-                navigator.geolocation.getCurrentPosition(resolve, reject);
-            });
-
-            const userLat = position.coords.latitude;
-            const userLng = position.coords.longitude;
-
-            const distance = getDistanceInMeters(
-                userLat,
-                userLng,
-                TARGET_LOCATION.lat,
-                TARGET_LOCATION.lng
-            );
-
-            if (distance > MAX_DISTANCE) {
-                alert("Mekana çok uzaktasın.");
-                return;
-            }
-
-            setIsLocationAllowed(true);
-
-            // 2. KAMERA
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: true
-            });
-
-            if (videoRef.current) {
-                videoRef.current.srcObject = stream;
-            }
-
-        } catch (err) {
-            console.error("İzin hatası:", err);
-        }
-    };
+    }, [isLocationAllowed]);
 
     useEffect(() => {
         // Sayfa yüklenince hemen değil, 1 saniye sonra konumu iste
@@ -131,7 +94,7 @@ function ThermalPrinterPage() {
                 },
                 { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
             );
-        }, 1000); // 1000 ms = 1 saniye bekle
+        },); // 1000 ms = 1 saniye bekle
 
         return () => clearTimeout(timer);
     }, []);
@@ -236,7 +199,7 @@ function ThermalPrinterPage() {
         );
     }*/
 
-    /*if (!isLocationAllowed) {
+    if (!isLocationAllowed) {
         return (
             <div className="location-check-container">
                 <div className="location-card">
@@ -245,13 +208,10 @@ function ThermalPrinterPage() {
 
                     <h2>Konum Doğrulanıyor</h2>
                     <p>Lütfen bekleyin, bulunduğunuz yer kontrol ediliyor...</p>
-                    <button onClick={requestPermissions}>
-                        Başla
-                    </button>
                 </div>
             </div>
         );
-    }*/
+    }
     return (
         <div className="container">
 
@@ -323,7 +283,6 @@ function ThermalPrinterPage() {
 
         </div>
 
-    ); // return parantezi kapandı
-} // Fonksiyon (ThermalPrinterPage) süslü parantezi kapandı
-
+    );
+}
 export default ThermalPrinterPage;
