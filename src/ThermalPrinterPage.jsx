@@ -10,11 +10,6 @@ const coffeeRotaTextPng = 'isma_yazi.png'; // 'COFFEE ROTA' metni logosu
 
 function ThermalPrinterPage() {
     const [isVerified, setIsVerified] = useState(false);
-    const TARGET_LOCATION = {
-        lat: 40.691111,  // buraya kendi koordinatın
-        lng: 29.607271,
-    };
-    const MAX_DISTANCE = 200; // metre
     //const [code, setCode] = useState("");
     //const [expireTime, setExpireTime] = useState(null);
     const frameRef = useRef(null)
@@ -25,24 +20,6 @@ function ThermalPrinterPage() {
     const maxChars = 35;
     const [previewImage, setPreviewImage] = useState(null);
 
-    const getDistanceInMeters = (lat1, lon1, lat2, lon2) => {
-        const R = 6371e3; // dünya yarıçapı (metre)
-        const toRad = (deg) => deg * Math.PI / 180;
-
-        const φ1 = toRad(lat1);
-        const φ2 = toRad(lat2);
-        const Δφ = toRad(lat2 - lat1);
-        const Δλ = toRad(lon2 - lon1);
-
-        const a =
-            Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-            Math.cos(φ1) * Math.cos(φ2) *
-            Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-        return R * c;
-    };
 
     useEffect(() => {
         if (videoRef.current) {
@@ -51,15 +28,13 @@ function ThermalPrinterPage() {
     }, []);
 
     useEffect(() => {
-        if (!isLocationAllowed) return;
-
         const startCamera = async () => {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: { facingMode: "user" },
                     audio: false
                 });
-
+    
                 if (videoRef.current) {
                     videoRef.current.srcObject = stream;
                 }
@@ -67,37 +42,10 @@ function ThermalPrinterPage() {
                 console.error("Kamera hatası:", err);
             }
         };
-
+    
         startCamera();
-    }, [isLocationAllowed]);
-
-    useEffect(() => {
-        // Sayfa yüklenince hemen değil, 1 saniye sonra konumu iste
-        const timer = setTimeout(() => {
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const userLat = position.coords.latitude;
-                    const userLng = position.coords.longitude;
-                    const distance = getDistanceInMeters(userLat, userLng, TARGET_LOCATION.lat, TARGET_LOCATION.lng);
-
-                    if (distance <= MAX_DISTANCE) {
-                        setIsLocationAllowed(true);
-                        setIsVerified(true);
-                    } else {
-                        alert("Mekana çok uzaktasın.");
-                    }
-                },
-                (error) => {
-                    console.error("Konum hatası detayı:", error);
-                    // Burası "Reddedildi" (Code 1) diyorsa tarayıcı isteği bloklamıştır.
-                    setIsLocationAllowed(false);
-                },
-                { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
-            );
-        },); // 1000 ms = 1 saniye bekle
-
-        return () => clearTimeout(timer);
     }, []);
+
     /*useEffect(() => {
         if (!expireTime) return;
 
@@ -198,20 +146,6 @@ function ThermalPrinterPage() {
             </div>
         );
     }*/
-
-    if (!isLocationAllowed) {
-        return (
-            <div className="location-check-container">
-                <div className="location-card">
-
-                    <div className="spinner"></div>
-
-                    <h2>Konum Doğrulanıyor</h2>
-                    <p>Lütfen bekleyin, bulunduğunuz yer kontrol ediliyor...</p>
-                </div>
-            </div>
-        );
-    }
     return (
         <div className="container">
 
