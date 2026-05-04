@@ -10,8 +10,8 @@ const coffeeRotaTextPng = 'isma_yazi.png'; // 'COFFEE ROTA' metni logosu
 
 function ThermalPrinterPage() {
     const [isVerified, setIsVerified] = useState(false);
-    const [code, setCode] = useState("");
-    const [expireTime, setExpireTime] = useState(null);
+    //const [code, setCode] = useState("");
+    //const [expireTime, setExpireTime] = useState(null);
     const frameRef = useRef(null)
     const [inputText, setInputText] = useState('');
     const [characterCount, setCharacterCount] = useState(0);
@@ -25,8 +25,7 @@ function ThermalPrinterPage() {
     }, []);
 
     useEffect(() => {
-        if (!isVerified) return;
-
+        //if (!isVerified) return;
         const startCamera = async () => {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({
@@ -44,9 +43,27 @@ function ThermalPrinterPage() {
 
         startCamera();
 
-    }, [isVerified]);
+    }, [/*isVerified*/]);
 
     useEffect(() => {
+        const checkNetwork = async () => {
+            try {
+                const res = await fetch("http://192.168.1.106:3001/ping");
+
+                if (res.ok) {
+                    setIsVerified(true);
+                } else {
+                    setIsVerified(false);
+                }
+            } catch (err) {
+                setIsVerified(false);
+            }
+        };
+
+        checkNetwork();
+    }, []);
+
+    /*useEffect(() => {
         if (!expireTime) return;
 
         const interval = setInterval(() => {
@@ -58,9 +75,9 @@ function ThermalPrinterPage() {
         }, 1000);
 
         return () => clearInterval(interval);
-    }, [expireTime]);
+    }, [expireTime]);*/
 
-    const verifyCode = async () => {
+    /*const verifyCode = async () => {
         const { data } = await supabase
             .from("codes")
             .select("*")
@@ -89,7 +106,7 @@ function ThermalPrinterPage() {
 
         setExpireTime(new Date(data.expires_at));
         setIsVerified(true);
-    };
+    };*/
 
     const handleInputChange = (event) => {
         const text = event.target.value;
@@ -125,7 +142,7 @@ function ThermalPrinterPage() {
         setInputText("");
     };
 
-    if (!isVerified) {
+    /*if (!isVerified) {
         return (
             <div className="verify-container">
                 <div className="verify-box">
@@ -139,8 +156,16 @@ function ThermalPrinterPage() {
                 </div>
             </div>
         );
-    }
+    }*/
 
+    if (!isVerified) {
+        return (
+            <div style={{ textAlign: "center", marginTop: "50px" }}>
+                <h2>Bu ağa bağlı değilsiniz ❌</h2>
+                <p>Lütfen doğru Wi-Fi ağına bağlanın</p>
+            </div>
+        );
+    }
     return (
         <div className="container">
 
