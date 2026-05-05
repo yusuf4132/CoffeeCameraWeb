@@ -101,14 +101,15 @@ function ThermalPrinterPage() {
         const getGray = (r, g, b) => 0.3 * r + 0.59 * g + 0.11 * b;
 
         if (filterType === "filter1") {
-            // ✅ Dengeli threshold (en güvenli)
             for (let i = 0; i < data.length; i += 4) {
                 let gray = getGray(data[i], data[i + 1], data[i + 2]);
 
-                // hafif kontrast
-                gray = (gray - 128) * 1.3 + 128;
+                // daha kontrollü noise
+                const noise = (Math.random() - 0.5) * 40;
+                gray = gray + noise;
 
-                gray = gray > 140 ? 255 : 0;
+                // ❗ tam siyah yerine koyu gri
+                gray = gray > 130 ? 240 : 30;
 
                 data[i] = data[i + 1] = data[i + 2] = gray;
             }
@@ -142,6 +143,24 @@ function ThermalPrinterPage() {
         }
 
         else if (filterType === "filter3") {
+            // 🔥 SENİN FİLTRENİN DÜZELTİLMİŞ HALİ
+            for (let i = 0; i < data.length; i += 4) {
+                let gray = getGray(data[i], data[i + 1], data[i + 2]);
+
+                // ✨ highlight compression (patlamayı önler)
+                gray = Math.sqrt(gray / 255) * 255;
+
+                // hafif kontrast
+                gray = (gray - 128) * 1.2 + 128;
+
+                // yumuşak threshold (tam kesme yok)
+                if (gray > 200) gray = 230;
+
+                data[i] = data[i + 1] = data[i + 2] = gray;
+            }
+        }
+
+        else if (filterType === "filter4") {
             for (let i = 0; i < data.length; i += 4) {
                 let gray = getGray(data[i], data[i + 1], data[i + 2]);
 
@@ -153,21 +172,6 @@ function ThermalPrinterPage() {
 
                 // soft limit (tam beyaz yapma)
                 gray = Math.min(gray, 245);
-
-                data[i] = data[i + 1] = data[i + 2] = gray;
-            }
-        }
-
-        else if (filterType === "filter4") {
-            for (let i = 0; i < data.length; i += 4) {
-                let gray = getGray(data[i], data[i + 1], data[i + 2]);
-
-                // daha kontrollü noise
-                const noise = (Math.random() - 0.5) * 40;
-                gray = gray + noise;
-
-                // ❗ tam siyah yerine koyu gri
-                gray = gray > 130 ? 240 : 30;
 
                 data[i] = data[i + 1] = data[i + 2] = gray;
             }
