@@ -96,38 +96,82 @@ function ThermalPrinterPage() {
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         const data = imageData.data;
 
-        for (let i = 0; i < data.length; i += 4) {
-            let r = data[i];
-            let g = data[i + 1];
-            let b = data[i + 2];
+        const width = canvas.width;
 
-            // gri ton
-            let gray = 0.3 * r + 0.59 * g + 0.11 * b;
+        const getGray = (r, g, b) => 0.3 * r + 0.59 * g + 0.11 * b;
 
-            if (filterType === "filter1") {
-                // Sert siyah-beyaz (threshold)
-                gray = gray > 128 ? 255 : 0;
+        if (filterType === "filter1") {
+            // ✅ Dengeli threshold (en güvenli)
+            for (let i = 0; i < data.length; i += 4) {
+                let gray = getGray(data[i], data[i + 1], data[i + 2]);
+
+                // hafif kontrast
+                gray = (gray - 128) * 1.3 + 128;
+
+                gray = gray > 140 ? 255 : 0;
+
+                data[i] = data[i + 1] = data[i + 2] = gray;
+            }
+        }
+
+        else if (filterType === "filter2") {
+            // ✅ Floyd–Steinberg dithering (EN İYİ DETAY)
+            const grayArr = [];
+
+            for (let i = 0; i < data.length; i += 4) {
+                grayArr.push(getGray(data[i], data[i + 1], data[i + 2]));
             }
 
-            else if (filterType === "filter2") {
-                // Daha kontrastlı
-                gray = gray * 1.4;
-                gray = gray > 120 ? 255 : 0;
+            for (let i = 0; i < grayArr.length; i++) {
+                const oldPixel = grayArr[i];
+                const newPixel = oldPixel > 128 ? 255 : 0;
+                const error = oldPixel - newPixel;
+
+                grayArr[i] = newPixel;
+
+                if (i + 1 < grayArr.length) grayArr[i + 1] += error * 7 / 16;
+                if (i + width - 1 < grayArr.length) grayArr[i + width - 1] += error * 3 / 16;
+                if (i + width < grayArr.length) grayArr[i + width] += error * 5 / 16;
+                if (i + width + 1 < grayArr.length) grayArr[i + width + 1] += error * 1 / 16;
             }
 
-            else if (filterType === "filter3") {
-                // Yumuşak gri + hafif threshold
-                gray = gray * 1.2;
-                gray = gray > 160 ? 255 : gray;
+            for (let i = 0; i < grayArr.length; i++) {
+                const val = grayArr[i];
+                data[i * 4] = data[i * 4 + 1] = data[i * 4 + 2] = val;
             }
+        }
 
-            else if (filterType === "filter4") {
-                // Dither efekti (basit)
-                const noise = Math.random() * 50;
-                gray = gray + noise > 140 ? 255 : 0;
+        else if (filterType === "filter3") {
+            // 🔥 SENİN FİLTRENİN DÜZELTİLMİŞ HALİ
+            for (let i = 0; i < data.length; i += 4) {
+                let gray = getGray(data[i], data[i + 1], data[i + 2]);
+
+                // ✨ highlight compression (patlamayı önler)
+                gray = Math.sqrt(gray / 255) * 255;
+
+                // hafif kontrast
+                gray = (gray - 128) * 1.2 + 128;
+
+                // yumuşak threshold (tam kesme yok)
+                if (gray > 200) gray = 230;
+
+                data[i] = data[i + 1] = data[i + 2] = gray;
             }
+        }
 
-            data[i] = data[i + 1] = data[i + 2] = gray;
+        else if (filterType === "filter4") {
+            // 🎞️ Retro gazete (noise + threshold)
+            for (let i = 0; i < data.length; i += 4) {
+                let gray = getGray(data[i], data[i + 1], data[i + 2]);
+
+                const noise = (Math.random() - 0.5) * 80;
+
+                gray = gray + noise;
+
+                gray = gray > 130 ? 255 : 0;
+
+                data[i] = data[i + 1] = data[i + 2] = gray;
+            }
         }
 
         ctx.putImageData(imageData, 0, 0);
@@ -153,7 +197,7 @@ function ThermalPrinterPage() {
 
         const canvas = await html2canvas(frameRef.current, {
             backgroundColor: "#ffffff",
-            scale: 2,
+            scale: 3,
             useCORS: true,
         });
 
