@@ -109,7 +109,7 @@ function ThermalPrinterPage() {
                 gray = gray + noise;
 
                 // ❗ tam siyah yerine koyu gri
-                gray = gray > 130 ? 240 : 30;
+                gray = gray > 130 ? 200 : 30;
 
                 data[i] = data[i + 1] = data[i + 2] = gray;
             }
