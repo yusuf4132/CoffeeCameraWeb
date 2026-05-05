@@ -12,7 +12,8 @@ function ThermalPrinterPage() {
     const [isVerified, setIsVerified] = useState(false);
     //const [code, setCode] = useState("");
     //const [expireTime, setExpireTime] = useState(null);
-    const frameRef = useRef(null)
+    const [selectedFilter, setSelectedFilter] = useState("filter1");
+    const frameRef = useRef(null);
     const [inputText, setInputText] = useState('');
     const [characterCount, setCharacterCount] = useState(0);
     const [isLocationAllowed, setIsLocationAllowed] = useState(false);
@@ -34,7 +35,7 @@ function ThermalPrinterPage() {
                     video: { facingMode: "user" },
                     audio: false
                 });
-    
+
                 if (videoRef.current) {
                     videoRef.current.srcObject = stream;
                 }
@@ -42,7 +43,7 @@ function ThermalPrinterPage() {
                 console.error("Kamera hatası:", err);
             }
         };
-    
+
         startCamera();
     }, []);
 
@@ -91,6 +92,49 @@ function ThermalPrinterPage() {
         setIsVerified(true);
     };*/
 
+    const applyThermalFilter = (ctx, canvas, filterType) => {
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+
+        for (let i = 0; i < data.length; i += 4) {
+            let r = data[i];
+            let g = data[i + 1];
+            let b = data[i + 2];
+
+            // gri ton
+            let gray = 0.3 * r + 0.59 * g + 0.11 * b;
+
+            if (filterType === "filter1") {
+                // Sert siyah-beyaz (threshold)
+                gray = gray > 128 ? 255 : 0;
+            }
+
+            else if (filterType === "filter2") {
+                // Daha kontrastlı
+                gray = gray * 1.4;
+                gray = gray > 120 ? 255 : 0;
+            }
+
+            else if (filterType === "filter3") {
+                // Yumuşak gri + hafif threshold
+                gray = gray * 1.2;
+                gray = gray > 160 ? 255 : gray;
+            }
+
+            else if (filterType === "filter4") {
+                // Dither efekti (basit)
+                const noise = Math.random() * 50;
+                gray = gray + noise > 140 ? 255 : 0;
+            }
+
+            data[i] = data[i + 1] = data[i + 2] = gray;
+        }
+
+        ctx.putImageData(imageData, 0, 0);
+    };
+
+
+
     const handleInputChange = (event) => {
         const text = event.target.value;
         if (text.length <= maxChars) {
@@ -103,8 +147,8 @@ function ThermalPrinterPage() {
         console.log("Resim çekiliyor ve birleştiriliyor...");
         combineAndPrepareForPrint();
     };
-
-    const combineAndPrepareForPrint = async () => {
+    /*const combineAndPrepareForPrint = async () => { if (!frameRef.current) return; const canvas = await html2canvas(frameRef.current, { backgroundColor: "#ffffff", scale: 2, useCORS: true, }); const imageData = canvas.toDataURL("image/png"); setPreviewImage(imageData); };*/
+    const combineAndPrepareForPrint = async (filterType) => {
         if (!frameRef.current) return;
 
         const canvas = await html2canvas(frameRef.current, {
@@ -112,6 +156,10 @@ function ThermalPrinterPage() {
             scale: 2,
             useCORS: true,
         });
+
+        const ctx = canvas.getContext("2d");
+
+        applyThermalFilter(ctx, canvas, filterType);
 
         const imageData = canvas.toDataURL("image/png");
         setPreviewImage(imageData);
@@ -194,9 +242,26 @@ function ThermalPrinterPage() {
 
             {/* ALT */}
             <div className="bottom-section">
-                <button onClick={handleTakePhoto} className="take-photo-btn">
+                {/*<button onClick={handleTakePhoto} className="take-photo-btn">
                     Resim Çek
-                </button>
+    </button>*/}
+                <div className="bottom-section">
+                    <button onClick={() => combineAndPrepareForPrint("filter1")}>
+                        Filtre 1 (Sert)
+                    </button>
+
+                    <button onClick={() => combineAndPrepareForPrint("filter2")}>
+                        Filtre 2 (Kontrast)
+                    </button>
+
+                    <button onClick={() => combineAndPrepareForPrint("filter3")}>
+                        Filtre 3 (Yumuşak)
+                    </button>
+
+                    <button onClick={() => combineAndPrepareForPrint("filter4")}>
+                        Filtre 4 (Dither)
+                    </button>
+                </div>
             </div>
 
             {previewImage && (
