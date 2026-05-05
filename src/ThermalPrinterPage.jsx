@@ -109,7 +109,7 @@ function ThermalPrinterPage() {
                 gray = gray + noise;
 
                 // ❗ tam siyah yerine koyu gri
-                gray = gray > 130 ? 200 : 30;
+                gray = gray > 130 ? 170 : 30;
 
                 data[i] = data[i + 1] = data[i + 2] = gray;
             }
@@ -154,7 +154,7 @@ function ThermalPrinterPage() {
                 gray = (gray - 128) * 1.2 + 128;
 
                 // yumuşak threshold (tam kesme yok)
-                if (gray > 200) gray = 195;
+                if (gray > 200) gray = 175;
 
                 data[i] = data[i + 1] = data[i + 2] = gray;
             }
