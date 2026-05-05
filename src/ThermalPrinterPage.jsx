@@ -142,33 +142,32 @@ function ThermalPrinterPage() {
         }
 
         else if (filterType === "filter3") {
-            // 🔥 SENİN FİLTRENİN DÜZELTİLMİŞ HALİ
             for (let i = 0; i < data.length; i += 4) {
                 let gray = getGray(data[i], data[i + 1], data[i + 2]);
 
-                // ✨ highlight compression (patlamayı önler)
-                gray = Math.sqrt(gray / 255) * 255;
+                // 🌟 ışık sıkıştırma (patlama yok)
+                gray = 255 * (1 - Math.exp(-gray / 180));
 
                 // hafif kontrast
-                gray = (gray - 128) * 1.2 + 128;
+                gray = (gray - 128) * 1.15 + 128;
 
-                // yumuşak threshold (tam kesme yok)
-                if (gray > 200) gray = 230;
+                // soft limit (tam beyaz yapma)
+                gray = Math.min(gray, 245);
 
                 data[i] = data[i + 1] = data[i + 2] = gray;
             }
         }
 
         else if (filterType === "filter4") {
-            // 🎞️ Retro gazete (noise + threshold)
             for (let i = 0; i < data.length; i += 4) {
                 let gray = getGray(data[i], data[i + 1], data[i + 2]);
 
-                const noise = (Math.random() - 0.5) * 80;
-
+                // daha kontrollü noise
+                const noise = (Math.random() - 0.5) * 40;
                 gray = gray + noise;
 
-                gray = gray > 130 ? 255 : 0;
+                // ❗ tam siyah yerine koyu gri
+                gray = gray > 130 ? 240 : 30;
 
                 data[i] = data[i + 1] = data[i + 2] = gray;
             }
