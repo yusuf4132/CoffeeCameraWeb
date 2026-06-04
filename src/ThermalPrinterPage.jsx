@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './ThermalPrinterPage.css'; // Aşağıdaki CSS dosyasını oluşturun
 import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 import { supabase } from "./supabaseClient";
 
 // Yer tutucu resim yolları (Kendi dosya yollarınızla değiştirin)
@@ -91,97 +92,6 @@ function ThermalPrinterPage() {
         setExpireTime(new Date(data.expires_at));
         setIsVerified(true);
     };*/
-
-    const applyThermalFilter = (ctx, canvas, filterType) => {
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const data = imageData.data;
-
-        const width = canvas.width;
-
-        const getGray = (r, g, b) => 0.3 * r + 0.59 * g + 0.11 * b;
-
-        if (filterType === "filter1") {
-            for (let i = 0; i < data.length; i += 4) {
-                let gray = getGray(data[i], data[i + 1], data[i + 2]);
-
-                // daha kontrollü noise
-                const noise = (Math.random() - 0.5) * 40;
-                gray = gray + noise;
-
-                // ❗ tam siyah yerine koyu gri
-                gray = gray > 130 ? 170 : 30;
-
-                data[i] = data[i + 1] = data[i + 2] = gray;
-            }
-        }
-
-        else if (filterType === "filter2") {
-            // ✅ Floyd–Steinberg dithering (EN İYİ DETAY)
-            const grayArr = [];
-
-            for (let i = 0; i < data.length; i += 4) {
-                grayArr.push(getGray(data[i], data[i + 1], data[i + 2]));
-            }
-
-            for (let i = 0; i < grayArr.length; i++) {
-                const oldPixel = grayArr[i];
-                const newPixel = oldPixel > 128 ? 255 : 0;
-                const error = oldPixel - newPixel;
-
-                grayArr[i] = newPixel;
-
-                if (i + 1 < grayArr.length) grayArr[i + 1] += error * 7 / 16;
-                if (i + width - 1 < grayArr.length) grayArr[i + width - 1] += error * 3 / 16;
-                if (i + width < grayArr.length) grayArr[i + width] += error * 5 / 16;
-                if (i + width + 1 < grayArr.length) grayArr[i + width + 1] += error * 1 / 16;
-            }
-
-            for (let i = 0; i < grayArr.length; i++) {
-                const val = grayArr[i];
-                data[i * 4] = data[i * 4 + 1] = data[i * 4 + 2] = val;
-            }
-        }
-
-        else if (filterType === "filter3") {
-            // 🔥 SENİN FİLTRENİN DÜZELTİLMİŞ HALİ
-            for (let i = 0; i < data.length; i += 4) {
-                let gray = getGray(data[i], data[i + 1], data[i + 2]);
-
-                // ✨ highlight compression (patlamayı önler)
-                gray = Math.sqrt(gray / 255) * 255;
-
-                // hafif kontrast
-                gray = (gray - 128) * 1.2 + 128;
-
-                // yumuşak threshold (tam kesme yok)
-                if (gray > 200) gray = 199;
-
-                data[i] = data[i + 1] = data[i + 2] = gray;
-            }
-        }
-
-        else if (filterType === "filter4") {
-            for (let i = 0; i < data.length; i += 4) {
-                let gray = getGray(data[i], data[i + 1], data[i + 2]);
-
-                // 🌟 ışık sıkıştırma (patlama yok)
-                gray = 255 * (1 - Math.exp(-gray / 180));
-
-                // hafif kontrast
-                gray = (gray - 128) * 1.15 + 128;
-
-                // soft limit (tam beyaz yapma)
-                gray = Math.min(gray, 245);
-
-                data[i] = data[i + 1] = data[i + 2] = gray;
-            }
-        }
-
-        ctx.putImageData(imageData, 0, 0);
-    };
-
-
-
     const handleInputChange = (event) => {
         const text = event.target.value;
         if (text.length <= maxChars) {
@@ -194,36 +104,62 @@ function ThermalPrinterPage() {
         console.log("Resim çekiliyor ve birleştiriliyor...");
         combineAndPrepareForPrint();
     };
-    /*const combineAndPrepareForPrint = async () => { if (!frameRef.current) return; const canvas = await html2canvas(frameRef.current, { backgroundColor: "#ffffff", scale: 2, useCORS: true, }); const imageData = canvas.toDataURL("image/png"); setPreviewImage(imageData); };*/
-    const combineAndPrepareForPrint = async (filterType) => {
+    const combineAndPrepareForPrint = async () => {
         if (!frameRef.current) return;
-
-        const canvas = await html2canvas(frameRef.current, {
-            backgroundColor: "#ffffff",
-            scale: 3,
-            useCORS: true,
-        });
-
-        const ctx = canvas.getContext("2d");
-
-        applyThermalFilter(ctx, canvas, filterType);
-
+        const canvas = await html2canvas(frameRef.current, { backgroundColor: "#ffffff", scale: 2, useCORS: true, });
         const imageData = canvas.toDataURL("image/png");
         setPreviewImage(imageData);
     };
-    const handleConfirmPrint = () => {
+
+    const handleConfirmPrint = async () => {
         if (!previewImage) return;
 
-        const link = document.createElement("a");
-        link.href = previewImage;
-        link.download = `photo_${Date.now()}.png`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        const pdf = new jsPDF({
+            orientation: "portrait",
+            unit: "mm",
+            format: "a4"
+        });
 
-        // temizleme
-        setPreviewImage(null);
-        setInputText("");
+        const img = new Image();
+
+        img.onload = () => {
+
+            // Tek fotoğraf boyutu
+            const photoWidth = 63.5;   // mm
+            const photoHeight = 72; // mm
+
+            // 5 sütun x 5 satır
+            const cols = 3;
+            const rows = 4;
+
+            // Sayfa kenar boşluğu
+            const marginX = 8;
+            const marginY = 8;
+
+            for (let row = 0; row < rows; row++) {
+                for (let col = 0; col < cols; col++) {
+
+                    const x = marginX + col * photoWidth;
+                    const y = marginY + row * photoHeight;
+
+                    pdf.addImage(
+                        previewImage,
+                        "PNG",
+                        x,
+                        y,
+                        photoWidth,
+                        photoHeight
+                    );
+                }
+            }
+
+            pdf.save(`photo_sheet_${Date.now()}.pdf`);
+
+            setPreviewImage(null);
+            setInputText("");
+        };
+
+        img.src = previewImage;
     };
 
     /*if (!isVerified) {
@@ -289,26 +225,9 @@ function ThermalPrinterPage() {
 
             {/* ALT */}
             <div className="bottom-section">
-                {/*<button onClick={handleTakePhoto} className="take-photo-btn">
+                <button onClick={handleTakePhoto} className="take-photo-btn">
                     Resim Çek
-    </button>*/}
-                <div className="bottom-section">
-                    <button onClick={() => combineAndPrepareForPrint("filter1")}>
-                        Filtre 1 (Sert)
-                    </button>
-
-                    <button onClick={() => combineAndPrepareForPrint("filter2")}>
-                        Filtre 2 (Kontrast)
-                    </button>
-
-                    <button onClick={() => combineAndPrepareForPrint("filter3")}>
-                        Filtre 3 (Yumuşak)
-                    </button>
-
-                    <button onClick={() => combineAndPrepareForPrint("filter4")}>
-                        Filtre 4 (Dither)
-                    </button>
-                </div>
+                </button>
             </div>
 
             {previewImage && (
