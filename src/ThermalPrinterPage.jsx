@@ -21,8 +21,30 @@ function ThermalPrinterPage() {
     const videoRef = useRef(null);
     const maxChars = 35;
     const [previewImage, setPreviewImage] = useState(null);
+    const [cameraError, setCameraError] = useState(false);
 
 
+    useEffect(() => {
+        const startCamera = async () => {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: "user" },
+                    audio: false
+                });
+
+                if (videoRef.current) {
+                    videoRef.current.srcObject = stream;
+                }
+
+                setCameraError(false);
+            } catch (err) {
+                console.error("Kamera hatası:", err);
+                setCameraError(true);
+            }
+        };
+
+        startCamera();
+    }, []);
     useEffect(() => {
         if (videoRef.current) {
             videoRef.current.setAttribute("crossorigin", "anonymous");
@@ -105,10 +127,33 @@ function ThermalPrinterPage() {
         combineAndPrepareForPrint();
     };
     const combineAndPrepareForPrint = async () => {
-        if (!frameRef.current) return;
-        const canvas = await html2canvas(frameRef.current, { backgroundColor: "#ffffff", scale: 2, useCORS: true, });
-        const imageData = canvas.toDataURL("image/png");
-        setPreviewImage(imageData);
+        if (!frameRef.current || !videoRef.current) return;
+    
+        const video = videoRef.current;
+    
+        // Video karesini al
+        const captureCanvas = document.createElement("canvas");
+        captureCanvas.width = video.videoWidth;
+        captureCanvas.height = video.videoHeight;
+    
+        const ctx = captureCanvas.getContext("2d");
+    
+        ctx.drawImage(
+            video,
+            0,
+            0,
+            captureCanvas.width,
+            captureCanvas.height
+        );
+    
+        // Sonra html2canvas ile frame'i oluştur
+        const frameCanvas = await html2canvas(frameRef.current, {
+            backgroundColor: "#ffffff",
+            scale: 2,
+            useCORS: true
+        });
+    
+        setPreviewImage(frameCanvas.toDataURL("image/png"));
     };
 
     const handleConfirmPrint = async () => {
@@ -211,7 +256,21 @@ function ThermalPrinterPage() {
                         </div>
 
                         <div className="video-wrapper">
-                            <video ref={videoRef} autoPlay playsInline muted className="video-feed" />
+                            {cameraError ? (
+                                <img
+                                    src={logoPng}
+                                    alt="ISMA Logo"
+                                    className="camera-placeholder"
+                                />
+                            ) : (
+                                <video
+                                    ref={videoRef}
+                                    autoPlay
+                                    playsInline
+                                    muted
+                                    className="video-feed"
+                                />
+                            )}
                         </div>
 
                         <div className="frame-bottom-logos">
