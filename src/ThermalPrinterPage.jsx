@@ -127,33 +127,10 @@ function ThermalPrinterPage() {
         combineAndPrepareForPrint();
     };
     const combineAndPrepareForPrint = async () => {
-        if (!frameRef.current || !videoRef.current) return;
-    
-        const video = videoRef.current;
-    
-        // Video karesini al
-        const captureCanvas = document.createElement("canvas");
-        captureCanvas.width = video.videoWidth;
-        captureCanvas.height = video.videoHeight;
-    
-        const ctx = captureCanvas.getContext("2d");
-    
-        ctx.drawImage(
-            video,
-            0,
-            0,
-            captureCanvas.width,
-            captureCanvas.height
-        );
-    
-        // Sonra html2canvas ile frame'i oluştur
-        const frameCanvas = await html2canvas(frameRef.current, {
-            backgroundColor: "#ffffff",
-            scale: 2,
-            useCORS: true
-        });
-    
-        setPreviewImage(frameCanvas.toDataURL("image/png"));
+        if (!frameRef.current) return;
+        const canvas = await html2canvas(frameRef.current, { backgroundColor: "#ffffff", scale: 2, useCORS: true, });
+        const imageData = canvas.toDataURL("image/png");
+        setPreviewImage(imageData);
     };
 
     const handleConfirmPrint = async () => {
