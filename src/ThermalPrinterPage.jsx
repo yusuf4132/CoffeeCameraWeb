@@ -10,9 +10,11 @@ const logoPng = 'isma_logo.png'; // Sadece 'R' logosu
 const coffeeRotaTextPng = 'isma_yazi.png'; // 'COFFEE ROTA' metni logosu
 
 function ThermalPrinterPage() {
+    const [successMessage, setSuccessMessage] = useState(false);
     const [isVerified, setIsVerified] = useState(false);
     //const [code, setCode] = useState("");
     //const [expireTime, setExpireTime] = useState(null);
+    const [loading, setLoading] = useState(false);
     const [selectedFilter, setSelectedFilter] = useState("filter1");
     const frameRef = useRef(null);
     const [inputText, setInputText] = useState('');
@@ -23,7 +25,19 @@ function ThermalPrinterPage() {
     const [previewImage, setPreviewImage] = useState(null);
     const [cameraError, setCameraError] = useState(false);
 
+    useEffect(() => {
+        const initCamera = async () => {
+            setLoading(true);
 
+            try {
+                // kamera açma kodların
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        initCamera();
+    }, []);
     useEffect(() => {
         const startCamera = async () => {
             try {
@@ -49,25 +63,6 @@ function ThermalPrinterPage() {
         if (videoRef.current) {
             videoRef.current.setAttribute("crossorigin", "anonymous");
         }
-    }, []);
-
-    useEffect(() => {
-        const startCamera = async () => {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: "user" },
-                    audio: false
-                });
-
-                if (videoRef.current) {
-                    videoRef.current.srcObject = stream;
-                }
-            } catch (err) {
-                console.error("Kamera hatası:", err);
-            }
-        };
-
-        startCamera();
     }, []);
 
     /*useEffect(() => {
@@ -122,18 +117,24 @@ function ThermalPrinterPage() {
         }
     };
 
-    const handleTakePhoto = () => {
-        console.log("Resim çekiliyor ve birleştiriliyor...");
-        combineAndPrepareForPrint();
+    const handleTakePhoto = async () => {
+        setLoading(true);
+        try {
+            console.log("Resim çekiliyor ve birleştiriliyor...");
+            combineAndPrepareForPrint();
+        } finally {
+            setLoading(false);
+        }
+
     };
     const combineAndPrepareForPrint = async () => {
         if (!frameRef.current) return;
-        const canvas = await html2canvas(frameRef.current, { backgroundColor: "#ffffff", scale: 2, useCORS: true, });
+        const canvas = await html2canvas(frameRef.current, { backgroundColor: "#ffffff", scale: 4, useCORS: true, });
         const imageData = canvas.toDataURL("image/png");
         setPreviewImage(imageData);
     };
 
-    const handleConfirmPrint = async () => {
+    /*const handleConfirmPrint = async () => {
         if (!previewImage) return;
 
         const pdf = new jsPDF({
@@ -146,13 +147,13 @@ function ThermalPrinterPage() {
 
         img.onload = () => {
 
-            // Tek fotoğraf boyutu
+            // Tek fotoğraf boyutu  8,5 x 5,4
             const photoWidth = 63.5;   // mm
             const photoHeight = 72; // mm
 
             // 5 sütun x 5 satır
             const cols = 3;
-            const rows = 4;
+            const rows = 6;
 
             // Sayfa kenar boşluğu
             const marginX = 8;
@@ -182,6 +183,153 @@ function ThermalPrinterPage() {
         };
 
         img.src = previewImage;
+    };*/
+    const blobToBase64 = (blob) => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+
+            reader.onloadend = () => resolve(reader.result);
+
+            reader.onerror = reject;
+
+            reader.readAsDataURL(blob);
+        });
+    };
+
+
+    const handleConfirmPrint = async () => {
+        setLoading(true);
+        try {
+
+            const { data, error } = await supabase
+                .rpc("increment_print_counter");
+
+            if (error) {
+                console.error(error);
+                return;
+            }
+
+            const { inner_index, outer_index } = data[0];
+            if (!previewImage) return;
+
+            const pdf = new jsPDF({
+                orientation: "portrait",
+                unit: "mm",
+                format: "a4",
+            });
+
+            const img = new Image();
+
+            img.onload = async () => {
+                const canvas = document.createElement("canvas");
+                const ctx = canvas.getContext("2d");
+
+                // Canvas'ı döndürülmüş boyuta göre ayarla
+                canvas.width = img.height;
+                canvas.height = img.width;
+
+                ctx.translate(canvas.width / 2, canvas.height / 2);
+                ctx.rotate(Math.PI / 2);
+                ctx.drawImage(img, -img.width / 2, -img.height / 2);
+
+                const rotatedImage = canvas.toDataURL("image/png");
+
+                const pageHeight = 297; // A4 yüksekliği
+                const photoWidth = 67.8;
+                const photoHeight = 53.7;
+
+                const slot = outer_index;
+                const cols = 3;
+                const rows = 5;
+
+                const slotsPerPage = cols * rows;
+                const positionInPage = slot % slotsPerPage;
+
+                const marginTop = 11.0;
+                const marginBottom = 11;
+                const usableHeight = pageHeight - marginTop - marginBottom;
+                const rowSpacing = usableHeight / rows;
+
+                /*for (let row = 0; row < rows; row++) {
+                    for (let col = 0; col < cols; col++) {
+                        const x = col * photoWidth;
+                        const y = marginTop + row * rowSpacing;
+    
+    
+                        pdf.addImage(
+                            rotatedImage,
+                            "PNG",
+                            x,
+                            y,
+                            photoWidth,
+                            photoHeight
+                        );
+                    }
+                }
+    
+                pdf.save(`photo_sheet_${Date.now()}.pdf`);
+    
+                setPreviewImage(null);
+                setInputText("");
+            };
+    
+            img.src = previewImage;
+        };*/
+
+
+
+                const row = Math.floor(positionInPage / cols);
+                const col = positionInPage % cols;
+
+                const horizontalGap = 1.565; // mm (sütunlar arası boşluk)
+                const verticalGap = 1.5;   // mm (satırlar arası boşluk)
+
+                const startX = 1.8;
+                const startY = marginTop;
+
+                const x = startX + col * (photoWidth + horizontalGap);
+                const y = startY + row * (photoHeight + verticalGap);
+                //const x = 1.76 + col * photoWidth;
+                //const y = marginTop + row * rowSpacing;
+
+                if (slot === 0 && outer_index !== 0) {
+                    pdf.addPage();
+                }
+
+                pdf.addImage(rotatedImage, "PNG", x, y, photoWidth, photoHeight);
+
+                //pdf.save(`photo_sheet_${Date.now()}.pdf`);
+                const pdfBlob = pdf.output("blob");
+
+                const base64 = await blobToBase64(pdfBlob);
+
+                const { error } = await supabase
+                    .from("print_jobs")
+                    .insert({
+                        pdf_base64: base64,
+                        status: "waiting",
+                    });
+
+                if (error) {
+                    console.error(error);
+                    return;
+                }
+
+                setPreviewImage(null);
+                setInputText("");
+                setLoading(false);
+                setSuccessMessage(true);
+                setTimeout(() => {
+                    setSuccessMessage(false);
+                }, 3000);
+            };
+
+            img.src = previewImage;
+
+        } finally {
+            //setLoading(false);
+        }
+
     };
 
     /*if (!isVerified) {
@@ -271,17 +419,45 @@ function ThermalPrinterPage() {
                     <div className="preview-modal">
                         <img src={previewImage} alt="Preview" />
 
-                        <button onClick={handleConfirmPrint} className="confirm-btn">
+                        <button onClick={handleConfirmPrint} disabled={loading} className="confirm-btn">
                             Onayla ve Yazdır
                         </button>
 
-                        <button onClick={() => setPreviewImage(null)} className="cancel-btn">
+                        <button onClick={() => {
+                            setLoading(true);
+
+                            setTimeout(() => {
+                                setPreviewImage(null);
+                                setLoading(false);
+                            });
+                        }} className="cancel-btn" disabled={loading}>
                             İptal
                         </button>
                     </div>
                 </div>
             )}
+            {loading && (
+                <div className="loading-overlay">
+                    <div className="loader"></div>
+                </div>
+            )}
+            {successMessage && (
+                <div className="success-overlay">
+                    <div className="success-dialog">
+                        <div className="success-icon">
+                            ✓
+                        </div>
 
+                        <div className="success-title">
+                            İşleminiz Tamamlandı
+                        </div>
+
+                        <div className="success-text">
+                            Resminiz başarıyla yazdırıldı.
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
 
     );
