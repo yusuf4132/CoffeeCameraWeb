@@ -236,7 +236,7 @@ function ThermalPrinterPage() {
 
                 const pageHeight = 297; // A4 yüksekliği
                 const photoWidth = 67.8;
-                const photoHeight = 53.7;
+                const photoHeight = 53;
 
                 const slot = outer_index;
                 const cols = 3;
@@ -281,8 +281,8 @@ function ThermalPrinterPage() {
                 const row = Math.floor(positionInPage / cols);
                 const col = positionInPage % cols;
 
-                const horizontalGap = 1.565; // mm (sütunlar arası boşluk)
-                const verticalGap = 1.5;   // mm (satırlar arası boşluk)
+                const horizontalGap = 1.525; // mm (sütunlar arası boşluk)
+                const verticalGap = 2;   // mm (satırlar arası boşluk)
 
                 const startX = 1.8;
                 const startY = marginTop;
@@ -301,13 +301,25 @@ function ThermalPrinterPage() {
                 //pdf.save(`photo_sheet_${Date.now()}.pdf`);
                 const pdfBlob = pdf.output("blob");
 
-                const base64 = await blobToBase64(pdfBlob);
+                const fileName = `job_${Date.now()}.pdf`;
+                const { error: uploadError } =
+                    await supabase.storage
+                        .from("print-jobs")
+                        .upload(fileName, pdfBlob);
+
+                if (uploadError) {
+                    console.error(uploadError);
+                    return;
+                }
 
                 const { error } = await supabase
                     .from("print_jobs")
                     .insert({
-                        pdf_base64: base64,
-                        status: "waiting",
+
+                        pdf_path: fileName,
+
+                        status: "waiting"
+
                     });
 
                 if (error) {
