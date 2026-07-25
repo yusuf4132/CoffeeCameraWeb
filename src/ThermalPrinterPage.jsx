@@ -24,6 +24,9 @@ function ThermalPrinterPage() {
     const maxChars = 35;
     const [previewImage, setPreviewImage] = useState(null);
     const [cameraError, setCameraError] = useState(false);
+    const [tableNo, setTableNo] = useState(null);
+    const [copyCount, setCopyCount] = useState(1);
+    const [showCopySelect, setShowCopySelect] = useState(false);
 
     useEffect(() => {
         const initCamera = async () => {
@@ -62,6 +65,14 @@ function ThermalPrinterPage() {
     useEffect(() => {
         if (videoRef.current) {
             videoRef.current.setAttribute("crossorigin", "anonymous");
+        }
+    }, []);
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const masa = params.get("masa");
+
+        if (masa) {
+            setTableNo(masa);
         }
     }, []);
 
@@ -118,6 +129,11 @@ function ThermalPrinterPage() {
     };
 
     const handleTakePhoto = async () => {
+        if (!tableNo) {
+            alert("Lütfen masadaki QR kodu okutun.");
+            return;
+        }
+
         setLoading(true);
         try {
             console.log("Resim çekiliyor ve birleştiriliyor...");
@@ -202,7 +218,9 @@ function ThermalPrinterPage() {
         try {
 
             const { data, error } = await supabase
-                .rpc("increment_print_counter");
+                .rpc("increment_print_counter", {
+                    p_count: copyCount
+                });
 
             if (error) {
                 console.error(error);
@@ -318,7 +336,10 @@ function ThermalPrinterPage() {
 
                         pdf_path: fileName,
 
-                        status: "waiting"
+                        status: "waiting",
+
+                        copy_count: copyCount
+
 
                     });
 
@@ -329,6 +350,8 @@ function ThermalPrinterPage() {
 
                 setPreviewImage(null);
                 setInputText("");
+                setShowCopySelect(false);
+                setCopyCount(null);
                 setLoading(false);
                 setSuccessMessage(true);
                 setTimeout(() => {
@@ -388,6 +411,11 @@ function ThermalPrinterPage() {
             <div className="middle-section">
                 <div className="camera-frame" ref={frameRef}>
                     <div className="camera-inner">
+                        {tableNo && !previewImage && (
+                            <div className="table-number">
+                                {tableNo}
+                            </div>
+                        )}
                         <div className="user-text-overlay">
                             {inputText}
                         </div>
@@ -429,22 +457,68 @@ function ThermalPrinterPage() {
             {previewImage && (
                 <div className="preview-overlay">
                     <div className="preview-modal">
-                        <img src={previewImage} alt="Preview" />
 
-                        <button onClick={handleConfirmPrint} disabled={loading} className="confirm-btn">
-                            Onayla ve Yazdır
-                        </button>
+                        {!showCopySelect ? (
+                            <>
+                                <img
+                                    src={previewImage}
+                                    alt="Preview"
+                                />
 
-                        <button onClick={() => {
-                            setLoading(true);
+                                <button
+                                    onClick={() => setShowCopySelect(true)}
+                                    className="confirm-btn"
+                                >
+                                    İlerle
+                                </button>
+                            </>
+                        ) : (
+                            <>
+                                <h2>
+                                    Kişi sayısı seçin
+                                </h2>
 
-                            setTimeout(() => {
+                                <div className="copy-selector">
+
+                                    {[1, 2, 3, 4, 5].map((num) => (
+                                        <button
+                                            key={num}
+                                            onClick={() => setCopyCount(num)}
+                                            className={
+                                                copyCount === num
+                                                    ? "copy-box selected"
+                                                    : "copy-box"
+                                            }
+                                        >
+                                            {num}
+                                        </button>
+                                    ))}
+
+                                </div>
+
+
+                                <button
+                                    onClick={handleConfirmPrint}
+                                    disabled={!copyCount || loading}
+                                    className="confirm-btn"
+                                >
+                                    Onayla ve Yazdır
+                                </button>
+                            </>
+                        )}
+
+
+                        <button
+                            onClick={() => {
                                 setPreviewImage(null);
-                                setLoading(false);
-                            });
-                        }} className="cancel-btn" disabled={loading}>
+                                setShowCopySelect(false);
+                                setCopyCount(null);
+                            }}
+                            className="cancel-btn"
+                        >
                             İptal
                         </button>
+
                     </div>
                 </div>
             )}
