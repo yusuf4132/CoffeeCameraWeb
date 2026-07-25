@@ -473,7 +473,7 @@ function ThermalPrinterPage() {
                                 </button>
                             </>
                         ) : (
-                            <>
+                            <div className='a'>
                                 <h2>
                                     Kişi sayısı seçin
                                 </h2>
@@ -504,7 +504,7 @@ function ThermalPrinterPage() {
                                 >
                                     Onayla ve Yazdır
                                 </button>
-                            </>
+                            </div>
                         )}
 
 
