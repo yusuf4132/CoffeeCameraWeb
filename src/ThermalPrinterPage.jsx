@@ -1,25 +1,22 @@
 import React, { useState, useRef, useEffect } from 'react';
-import './ThermalPrinterPage.css'; // Aşağıdaki CSS dosyasını oluşturun
+import './ThermalPrinterPage.css';
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { supabase } from "./supabaseClient";
 
-// Yer tutucu resim yolları (Kendi dosya yollarınızla değiştirin)
-// Örnek: import logo from './assets/logo.png';
 const logoPng = 'isma_logo.png'; // Sadece 'R' logosu
 const coffeeRotaTextPng = 'isma_yazi.png'; // 'COFFEE ROTA' metni logosu
 
 function ThermalPrinterPage() {
     const [successMessage, setSuccessMessage] = useState(false);
-    const [isVerified, setIsVerified] = useState(false);
+    //const [isVerified, setIsVerified] = useState(false);
     //const [code, setCode] = useState("");
     //const [expireTime, setExpireTime] = useState(null);
+    //const [isLocationAllowed, setIsLocationAllowed] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [selectedFilter, setSelectedFilter] = useState("filter1");
     const frameRef = useRef(null);
     const [inputText, setInputText] = useState('');
     const [characterCount, setCharacterCount] = useState(0);
-    const [isLocationAllowed, setIsLocationAllowed] = useState(false);
     const videoRef = useRef(null);
     const maxChars = 35;
     const [previewImage, setPreviewImage] = useState(null);
@@ -31,14 +28,12 @@ function ThermalPrinterPage() {
     useEffect(() => {
         const initCamera = async () => {
             setLoading(true);
-
             try {
                 // kamera açma kodların
             } finally {
                 setLoading(false);
             }
         };
-
         initCamera();
     }, []);
     useEffect(() => {
@@ -48,18 +43,15 @@ function ThermalPrinterPage() {
                     video: { facingMode: "user" },
                     audio: false
                 });
-
                 if (videoRef.current) {
                     videoRef.current.srcObject = stream;
                 }
-
                 setCameraError(false);
             } catch (err) {
                 console.error("Kamera hatası:", err);
                 setCameraError(true);
             }
         };
-
         startCamera();
     }, []);
     useEffect(() => {
@@ -150,69 +142,6 @@ function ThermalPrinterPage() {
         setPreviewImage(imageData);
     };
 
-    /*const handleConfirmPrint = async () => {
-        if (!previewImage) return;
-
-        const pdf = new jsPDF({
-            orientation: "portrait",
-            unit: "mm",
-            format: "a4"
-        });
-
-        const img = new Image();
-
-        img.onload = () => {
-
-            // Tek fotoğraf boyutu  8,5 x 5,4
-            const photoWidth = 63.5;   // mm
-            const photoHeight = 72; // mm
-
-            // 5 sütun x 5 satır
-            const cols = 3;
-            const rows = 6;
-
-            // Sayfa kenar boşluğu
-            const marginX = 8;
-            const marginY = 8;
-
-            for (let row = 0; row < rows; row++) {
-                for (let col = 0; col < cols; col++) {
-
-                    const x = marginX + col * photoWidth;
-                    const y = marginY + row * photoHeight;
-
-                    pdf.addImage(
-                        previewImage,
-                        "PNG",
-                        x,
-                        y,
-                        photoWidth,
-                        photoHeight
-                    );
-                }
-            }
-
-            pdf.save(`photo_sheet_${Date.now()}.pdf`);
-
-            setPreviewImage(null);
-            setInputText("");
-        };
-
-        img.src = previewImage;
-    };*/
-    const blobToBase64 = (blob) => {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-
-            reader.onloadend = () => resolve(reader.result);
-
-            reader.onerror = reject;
-
-            reader.readAsDataURL(blob);
-        });
-    };
-
-
     const handleConfirmPrint = async () => {
         setLoading(true);
         try {
@@ -266,36 +195,7 @@ function ThermalPrinterPage() {
                 const marginTop = 11.0;
                 const marginBottom = 11;
                 const usableHeight = pageHeight - marginTop - marginBottom;
-                const rowSpacing = usableHeight / rows;
-
-                /*for (let row = 0; row < rows; row++) {
-                    for (let col = 0; col < cols; col++) {
-                        const x = col * photoWidth;
-                        const y = marginTop + row * rowSpacing;
-    
-    
-                        pdf.addImage(
-                            rotatedImage,
-                            "PNG",
-                            x,
-                            y,
-                            photoWidth,
-                            photoHeight
-                        );
-                    }
-                }
-    
-                pdf.save(`photo_sheet_${Date.now()}.pdf`);
-    
-                setPreviewImage(null);
-                setInputText("");
-            };
-    
-            img.src = previewImage;
-        };*/
-
-
-
+                //const rowSpacing = usableHeight / rows;
                 const row = Math.floor(positionInPage / cols);
                 const col = positionInPage % cols;
 
