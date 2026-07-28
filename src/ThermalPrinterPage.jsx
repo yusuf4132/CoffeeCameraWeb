@@ -128,7 +128,7 @@ function ThermalPrinterPage() {
 
         setLoading(true);
         try {
-            console.log("Resim çekiliyor ve birleştiriliyor...");
+            console.log("Fotoğraf çekiliyor ve birleştiriliyor...");
             combineAndPrepareForPrint();
         } finally {
             setLoading(false);
@@ -350,7 +350,7 @@ function ThermalPrinterPage() {
             {/* ALT */}
             <div className="bottom-section">
                 <button onClick={handleTakePhoto} className="take-photo-btn">
-                    Resim Çek
+                    Fotoğraf Çek
                 </button>
             </div>
 
@@ -439,7 +439,7 @@ function ThermalPrinterPage() {
                         </div>
 
                         <div className="success-text">
-                            Resminiz başarıyla yazdırıldı.
+                            Fotoğrafınız başarıyla yazdırıldı.
                         </div>
                     </div>
                 </div>
