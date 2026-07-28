@@ -196,7 +196,7 @@ body {
   padding: 10px 0;
   font-size: 1.1rem;
   border: none;
-  border-bottom: 1px solid #aaa;
+  border-bottom: 0px solid #aaa;
   outline: none;
 }
 
@@ -206,7 +206,7 @@ body {
 
 .char-counter {
   position: absolute;
-  bottom: -18px;
+  bottom: -21px;
   right: 0;
   font-size: 0.8rem;
   color: #777;
